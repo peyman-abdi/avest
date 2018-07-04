@@ -2,7 +2,7 @@ package avest
 
 import (
 	"time"
-	"github.com/peyman-abdi/avalanche/app/interfaces/core"
+	"github.com/peyman-abdi/avalanche/app/interfaces/services"
 	"errors"
 	"testing"
 	"net/http"
@@ -28,14 +28,14 @@ func (t *TestRouteModel) TableName() string {
 }
 type TestRouteMigratable struct {
 }
-func (t *TestRouteMigratable) Up(migrator core.Migrator) error {
+func (t *TestRouteMigratable) Up(migrator services.Migrator) error {
 	var err error
 	if err = migrator.AutoMigrate(&TestRouteModel{}); err != nil {
 		return err
 	}
 	return nil
 }
-func (t *TestRouteMigratable) Down(migrator core.Migrator) error {
+func (t *TestRouteMigratable) Down(migrator services.Migrator) error {
 	var err error
 	if err = migrator.DropTableIfExists(&TestRouteModel{}); err != nil {
 		return err
@@ -43,9 +43,9 @@ func (t *TestRouteMigratable) Down(migrator core.Migrator) error {
 	return nil
 }
 type TestRouteModule struct {
-	S core.Services
+	S services.Services
 }
-var _ core.Module = (*TestRouteModule)(nil)
+var _ services.Module = (*TestRouteModule)(nil)
 func (t *TestRouteModule) Title() string       { return "TestMigrationModule" }
 func (t *TestRouteModule) Description() string { return "Test module" }
 func (t *TestRouteModule) Version() string     { return "1.01" }
@@ -53,22 +53,22 @@ func (t *TestRouteModule) Activated() bool     { return true }
 func (t *TestRouteModule) Installed() bool     { return true }
 func (t *TestRouteModule) Deactivated()        { }
 func (t *TestRouteModule) Purged()             { }
-func (t *TestRouteModule) Migrations() []core.Migratable {
-	return []core.Migratable {
+func (t *TestRouteModule) Migrations() []services.Migratable {
+	return []services.Migratable {
 		new(TestRouteMigratable),
 	}
 }
-func (t *TestRouteModule) Routes() []*core.Route {
-	return []*core.Route {
+func (t *TestRouteModule) Routes() []*services.Route {
+	return []*services.Route {
 		{
 			Group: "/api/tests",
 			MiddleWares: []string {
 				"oauth",
 			},
-			Methods: core.ANY,
-			Urls: []string{"/id/<id:\\d+>/str/<name>"},
-			Verify: nil,
-			Handle: func(request core.Request, response core.Response) error {
+			Methods: services.ANY,
+			Urls:    []string{"/id/<id:\\d+>/str/<name>"},
+			Verify:  nil,
+			Handle: func(request services.Request, response services.Response) error {
 				request.SetValue("route:test", orderInt); orderInt++
 				values := request.GetAll("route:test", "middleware:auth", "group:api", "group:tests", "id", "name")
 				response.SuccessJSON(values)
@@ -80,11 +80,11 @@ func (t *TestRouteModule) Routes() []*core.Route {
 			MiddleWares: []string {
 				"oauth",
 			},
-			Methods: core.ANY,
-			Urls: []string{"/", ""},
-			Verify: nil,
-			Handle: func(request core.Request, response core.Response) error {
-				response.SuccessString("hello api")
+			Methods: services.ANY,
+			Urls:    []string{"/", ""},
+			Verify:  nil,
+			Handle: func(request services.Request, response services.Response) error {
+				response.SuccessString(fmt.Sprintf("session: %s, content: %v", request.Session().GetID(), request.Session().GetAll()))
 				return nil
 			},
 		},
@@ -92,10 +92,10 @@ func (t *TestRouteModule) Routes() []*core.Route {
 			MiddleWares: []string {
 				"oauth",
 			},
-			Methods: core.ANY,
-			Urls: []string{"/", ""},
-			Verify: nil,
-			Handle: func(request core.Request, response core.Response) error {
+			Methods: services.ANY,
+			Urls:    []string{"/", ""},
+			Verify:  nil,
+			Handle: func(request services.Request, response services.Response) error {
 				response.SuccessString("hello world")
 				return nil
 			},
@@ -104,13 +104,13 @@ func (t *TestRouteModule) Routes() []*core.Route {
 			MiddleWares: []string {
 				"oauth",
 			},
-			Group: "/api",
-			Methods: core.GET,
-			Urls: []string{"/models"},
-			Verify: nil,
-			Handle: func(request core.Request, response core.Response) error {
+			Group:   "/api",
+			Methods: services.GET,
+			Urls:    []string{"/models"},
+			Verify:  nil,
+			Handle: func(request services.Request, response services.Response) error {
 				var models []*TestRouteModel
-				t.S.Repository().Query(&TestRouteModel{}).Get(&models)
+				t.S.Repository().Query(&TestRouteModel{}).GetAll(&models)
 				response.SuccessJSON(map[string]interface{} {
 					"data": models,
 					"count": len(models),
@@ -119,16 +119,16 @@ func (t *TestRouteModule) Routes() []*core.Route {
 			},
 		},
 		{
+			Group:   "/api",
 			MiddleWares: []string {
 				"oauth",
 			},
-			Group: "/api",
-			Methods: core.GET,
-			Urls: []string{"/models/<id:\\d+>"},
-			Verify: nil,
-			Handle: func(request core.Request, response core.Response) error {
+			Methods: services.GET,
+			Urls:    []string{"/models/<id:\\d+>"},
+			Verify:  nil,
+			Handle: func(request services.Request, response services.Response) error {
 				var model *TestRouteModel
-				t.S.Repository().Query(&TestRouteModel{}).Where("id = ?", request.GetValue("id")).Get(&model)
+				t.S.Repository().Query(&TestRouteModel{}).Where("id = ?", request.GetValue("id")).GetAll(&model)
 				response.SuccessJSON(map[string]interface{} {
 					"data": model,
 				})
@@ -136,14 +136,14 @@ func (t *TestRouteModule) Routes() []*core.Route {
 			},
 		},
 		{
+			Group:   "/api",
 			MiddleWares: []string {
 				"oauth",
 			},
-			Group: "/api",
-			Methods: core.PUT,
-			Urls: []string{"/models/<id:\\d+>"},
-			Verify: nil,
-			Handle: func(request core.Request, response core.Response) error {
+			Methods: services.PUT,
+			Urls:    []string{"/models/<id:\\d+>"},
+			Verify:  nil,
+			Handle: func(request services.Request, response services.Response) error {
 				var model *TestRouteModel
 				t.S.Repository().Query(&TestRouteModel{}).Where("id = ?", request.GetValue("id")).GetFirst(&model)
 				if model == nil {
@@ -163,14 +163,14 @@ func (t *TestRouteModule) Routes() []*core.Route {
 			},
 		},
 		{
+			Group:   "/api",
 			MiddleWares: []string {
 				"oauth",
 			},
-			Group: "/api",
-			Methods: core.POST,
-			Urls: []string{"/models"},
-			Verify: nil,
-			Handle: func(request core.Request, response core.Response) error {
+			Methods: services.POST,
+			Urls:    []string{"/models"},
+			Verify:  nil,
+			Handle: func(request services.Request, response services.Response) error {
 				vals := request.GetAll("text", "int")
 
 				var model = &TestRouteModel{
@@ -187,14 +187,14 @@ func (t *TestRouteModule) Routes() []*core.Route {
 			},
 		},
 		{
+			Group:   "/api",
 			MiddleWares: []string {
 				"oauth",
 			},
-			Group: "/api",
-			Methods: core.DELETE,
-			Urls: []string{"/models/<id:\\d+>"},
-			Verify: nil,
-			Handle: func(request core.Request, response core.Response) error {
+			Methods: services.DELETE,
+			Urls:    []string{"/models/<id:\\d+>"},
+			Verify:  nil,
+			Handle: func(request services.Request, response services.Response) error {
 				var model *TestRouteModel
 				t.S.Repository().Query(&TestRouteModel{}).Where("id = ?", request.GetValue("id")).GetFirst(&model)
 				if model == nil {
@@ -210,10 +210,10 @@ func (t *TestRouteModule) Routes() []*core.Route {
 			MiddleWares: []string {
 				"oauth",
 			},
-			Methods: core.GET,
-			Urls: []string{"/home"},
-			Verify: nil,
-			Handle: func(request core.Request, response core.Response) error {
+			Methods: services.GET,
+			Urls:    []string{"/home"},
+			Verify:  nil,
+			Handle: func(request services.Request, response services.Response) error {
 				response.View("home", nil)
 				return nil
 			},
@@ -222,47 +222,48 @@ func (t *TestRouteModule) Routes() []*core.Route {
 			MiddleWares: []string {
 				"oauth",
 			},
-			Methods: core.GET,
-			Urls: []string{"/error"},
-			Verify: nil,
-			Handle: func(request core.Request, response core.Response) error {
+			Methods: services.GET,
+			Urls:    []string{"/error"},
+			Verify:  nil,
+			Handle: func(request services.Request, response services.Response) error {
 				response.View("error", nil)
 				return nil
 			},
 		},
 	}
 }
-func (t *TestRouteModule) MiddleWares() []*core.MiddleWare {
-	return []*core.MiddleWare {
+func (t *TestRouteModule) MiddleWares() []*services.MiddleWare {
+	return []*services.MiddleWare {
 		{
 			Name: "oauth",
-			Handler: func(request core.Request, response core.Response) error {
+			Handler: func(request services.Request, response services.Response) error {
 				request.SetValue("middleware:auth", orderInt); orderInt++
 				return nil
 			},
 		},
 	}
 }
-func (t *TestRouteModule) GroupsHandlers() []*core.RouteGroup {
-	return[]*core.RouteGroup {
+func (t *TestRouteModule) GroupsHandlers() []*services.RouteGroup {
+	return[]*services.RouteGroup {
 		{
 			Name: "tests",
-			Handler: func(request core.Request, response core.Response) error {
+			Handler: func(request services.Request, response services.Response) error {
 				request.SetValue("group:tests", orderInt); orderInt++
 				return nil
 			},
 		},
 		{
 			Name: "api",
-			Handler: func(request core.Request, response core.Response) error {
+			Handler: func(request services.Request, response services.Response) error {
+				request.Session().Set("id", 123)
 				request.SetValue("group:api", orderInt); orderInt++
 				return nil
 			},
 		},
 	}
 }
-func (t *TestRouteModule) Templates() []*core.Template {
-	return []*core.Template {
+func (t *TestRouteModule) Templates() []*services.Template {
+	return []*services.Template {
 		{
 			Name:"home",
 			Path:"home.jet",

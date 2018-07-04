@@ -2,13 +2,13 @@ package avest
 
 import (
 	"os"
-	"github.com/peyman-abdi/avalanche/app/interfaces/core"
+	"github.com/peyman-abdi/avalanche/app/interfaces/services"
 	"github.com/hjson/hjson-go"
 	"strings"
 	"path"
 )
 
-func CreateTemplateFiles(app core.Application, templates map[string]string) {
+func CreateTemplateFiles(app services.Application, templates map[string]string) {
 	err := os.MkdirAll(app.ResourcesPath("views/templates"), 0700)
 	if err != nil {
 		panic(err)
@@ -22,11 +22,11 @@ func CreateTemplateFiles(app core.Application, templates map[string]string) {
 			os.MkdirAll(app.ConfigPath(foldersPath), 0700)
 		}
 
-		CreateFile(app.ResourcesPath(path.Join("views/templates", filename)), []byte(data))
+		CreateFile(app.TemplatesPath(filename), []byte(data))
 	}
 }
 
-func CreateConfigFiles(app core.Application, configs map[string]interface{}) {
+func CreateConfigFiles(app services.Application, configs map[string]interface{}) {
 	err := os.MkdirAll(app.ConfigPath(""), 0700)
 	if err != nil {
 		panic(err)

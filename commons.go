@@ -5,7 +5,7 @@ var CommonConfigs = map[string]interface{}{
 	"app.hjson": map[string]interface{}{
 		"debug": true,
 	},
-	"database.hjson": map[string]interface{}{
+	"rdbms.hjson": map[string]interface{}{
 		"app": "sqlite3",
 		"runtime": map[string]interface{}{
 			"migrations": "migrations",
@@ -21,6 +21,11 @@ var CommonConfigs = map[string]interface{}{
 	"server.hjson": map[string]interface{}{
 		"address": "127.0.0.1",
 		"port":    8181,
+		"sessions": map[string]interface{} {
+			"auto": true,
+			"driver": "redis",
+			"connection": "default",
+		},
 	},
 }
 var SimpleTemplates = map[string]string {
@@ -42,7 +47,15 @@ var SimpleTemplates = map[string]string {
   </body>
 </html>
 	`,
-	"error.jet": `
+	"error-debug.jet": `
+{{ extends "layout.jet" }}
+
+{{ block body() }}
+<main>
+    This content will be yielded in the layout above.
+  </main>
+	`,
+	"error-deploy.jet": `
 {{ extends "layout.jet" }}
 
 {{ block body() }}
