@@ -6,7 +6,7 @@ import (
 	"github.com/peyman-abdi/avalanche/app/modules/services/config"
 	"github.com/peyman-abdi/avalanche/app/modules/services/logger"
 	"github.com/peyman-abdi/avalanche/app/modules/services/database"
-	"github.com/peyman-abdi/avalanche/app/modules/services/router"
+	"github.com/peyman-abdi/avalanche/app/modules/services/http"
 	"github.com/peyman-abdi/avalanche/app/modules/services/modules"
 	application "github.com/peyman-abdi/avalanche/app/modules/services/app"
 	"github.com/peyman-abdi/avalanche/app/modules/services/renderer"
@@ -60,7 +60,7 @@ func MockServices(configs map[string]interface{}, envs map[string]string) servic
 	redis = redis2.New(conf, log)
 	cache = cache2.New(app, conf, log, redis)
 
-	r = router.New(app, conf, log, redis, t)
+	r = http.New(app, conf, log, redis, t)
 
 	mm = modules.New(conf, mig)
 	mm.LoadModules(s)
