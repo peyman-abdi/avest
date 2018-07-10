@@ -18,14 +18,14 @@ func (t *TestMigrationModel) TableName() string {
 }
 type TestMigMigratable struct {
 }
-func (t *TestMigMigratable) Up(migrator services.Migrator) error {
+func (t *TestMigMigratable) Up(migrator services.Migratory) error {
 	var err error
 	if err = migrator.AutoMigrate(&TestMigrationModel{}); err != nil {
 		return err
 	}
 	return nil
 }
-func (t *TestMigMigratable) Down(migrator services.Migrator) error {
+func (t *TestMigMigratable) Down(migrator services.Migratory) error {
 	var err error
 	if err = migrator.DropTableIfExists(&TestMigrationModel{}); err != nil {
 		return err
@@ -57,5 +57,8 @@ func (t *TestMigrationModule) GroupsHandlers() []*services.RouteGroup {
 	return nil
 }
 func (t *TestMigrationModule) Templates() []*services.Template {
+	return nil
+}
+func (t *TestMigrationModule) Services() map[string]func() interface{} {
 	return nil
 }

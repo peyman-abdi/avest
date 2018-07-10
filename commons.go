@@ -27,6 +27,12 @@ var CommonConfigs = map[string]interface{}{
 			"connection": "default",
 		},
 	},
+	"redis.hjson": map[string]interface{} {
+		"connections": map[string]interface{} {
+			"local": map[string]interface{} {
+			},
+		},
+	},
 }
 var SimpleTemplates = map[string]string {
 	"home.jet": `
