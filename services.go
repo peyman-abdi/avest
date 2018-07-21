@@ -12,6 +12,7 @@ import (
 	"github.com/peyman-abdi/avalanche/app/modules/services/renderer"
 	redis2 "github.com/peyman-abdi/avalanche/app/modules/services/redis"
 	cache2 "github.com/peyman-abdi/avalanche/app/modules/services/cache"
+	hash2 "github.com/peyman-abdi/avalanche/app/modules/services/hash"
 )
 
 var app services.Application
@@ -24,6 +25,7 @@ var r services.Router
 var t services.RenderEngine
 var cache services.Cache
 var redis services.RedisClient
+var hash services.Hash
 
 var s = new(ServicesMock)
 
@@ -41,11 +43,13 @@ func (s *ServicesMock) Router() services.Router             { return r }
 func (s *ServicesMock) Renderer() services.RenderEngine     { return t }
 func (s *ServicesMock) Cache() services.Cache 	  			  { return cache }
 func (s *ServicesMock) Redis() services.RedisClient 	  	  { return redis }
+func (s *ServicesMock) Hash() services.Hash 	  	  { return hash }
 func (s *ServicesMock) GetByName(name string) interface{} 	  { return nil }
 
 func MockServices(configs map[string]interface{}, envs map[string]string) services.Services {
 	app = application.New(0, "test")
-	os.MkdirAll(app.StoragePath(""), 0700)
+	os.MkdirAll(app.StoragePath("sessions"), 0755)
+	os.MkdirAll(app.StoragePath("logs"), 0755)
 
 	CreateConfigFiles(app, configs)
 
@@ -53,10 +57,9 @@ func MockServices(configs map[string]interface{}, envs map[string]string) servic
 	log = logger.New(conf)
 	log.LoadConsole()
 
+	hash = hash2.New(conf)
 	repo, mig = database.New(conf, log)
-
 	t = renderer.New(app, log)
-
 	redis = redis2.New(conf, log)
 	cache = cache2.New(app, conf, log, redis)
 
